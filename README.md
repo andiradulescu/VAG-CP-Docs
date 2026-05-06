@@ -204,7 +204,8 @@ VAG-CP-Docs/
 │   ├── odis-cp-session-wauggafc7dn120188.md     ← Real ODIS session analysis (VIN redacted)
 │   ├── geko-pki-analysis.md                     ← VW CA Root and GEKO TLS certificates
 │   ├── odis-versions-lear-temic-chip-map.md     ← ODIS versions and gateway hardware
-│   └── cp-master-module.md                      ← J533 as CP master — how enforcement works
+│   ├── cp-master-module.md                      ← J533 as CP master — how enforcement works
+│   └── cp-offline-resolution.md                 ← Offline resolution decision tree and research plan
 ├── cases/                     ← Documented consumer impact stories
 │   └── 2025-audi-a6-c7-hvac-seats.md
 ├── advocacy/                  ← How to take action
