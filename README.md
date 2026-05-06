@@ -207,7 +207,8 @@ VAG-CP-Docs/
 │   ├── cp-master-module.md                      ← J533 as CP master — how enforcement works
 │   ├── cp-offline-resolution.md                 ← Offline resolution decision tree and research plan
 │   ├── gateway-firmware-analysis.md             ← Lear D4 gateway firmware RE — AES tables, CP handler map
-│   └── live-test-results-20260506.md            ← Live vehicle test — SA2 seed obtained, write path confirmed
+│   ├── live-test-results-20260506.md            ← Live vehicle test — SA2 seed obtained, write path confirmed
+│   └── cp-write-breakthrough-20260506.md        ← **BREAKTHROUGH** — CP write without SA2, full ODIS sequence decoded
 ├── cases/                     ← Documented consumer impact stories
 │   └── 2025-audi-a6-c7-hvac-seats.md
 ├── advocacy/                  ← How to take action
