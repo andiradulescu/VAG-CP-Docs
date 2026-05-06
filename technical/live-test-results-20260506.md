@@ -128,3 +128,40 @@ J533 Gateway ← "Bouncer with guest list"
 - `D:\ECU FLASH\py310x86\` — 32-bit Python 3.10 embeddable (for J2534 DLL compatibility)
 - simos-suite Deep Diagnostic bug fix (commit `276f6bd`)
 - simos-suite `quick_test()` + known blob constants (commit `e19751f`)
+
+## SA2 Security Access — Deep Dive
+
+### Bytecode Extraction
+SA2 bytecode extracted from `FL_4G0820043HI_0088_S.frf` ODX:
+- SECURITY-METHOD: `SA2`
+- FW-SIGNATURE (bytecode): `93 27 03 19 46 4C` (6 bytes)
+
+### Key Computation (Flash SA2)
+Algorithm: `key = (seed + 0x27031946) & 0xFFFFFFFF` (simple 32-bit addition)
+
+Verified with bri3d/sa2_seed_key library:
+| Seed | Key | Status |
+|------|-----|--------|
+| `C65DDCA1` | `ED60F5E7` | ✅ Math correct |
+| `B185965C` | `D888AFA2` | ✅ Math correct |
+| `D7B5F230` | `FEB90B76` | ✅ Math correct |
+
+### Live ECU Response
+**All computed keys rejected with NRC 0x35 (invalidKey).**
+
+The flash programming SA2 bytecode produces mathematically correct keys per the bri3d library, but the **diagnostic session SA2** (level 0x03 for DID write access) uses a **different key derivation** — likely the vehicle's SKC (Secret Key Code) combined with the seed.
+
+### Architecture Split
+```
+Flash SA2:       bytecode 93270319464C → key = seed + 0x27031946
+Diagnostic SA2:  SKC-derived → key = f(seed, vehicle_SKC)
+```
+
+These are separate authentication domains. The flash bytecode is embedded in the FRF/ODX, while the diagnostic SKC is vehicle-specific.
+
+### Next Step: SKC Acquisition
+The vehicle's SKC (5-digit code) is needed to compute the diagnostic SA2 key. Sources:
+1. VagTacho — reads PIN from instrument cluster EEPROM (requires FTDI hardware)
+2. VCDS Login — common codes: 12233, 11463, 00000, 20103
+3. Audi dealer — with VIN + proof of ownership
+4. Instrument cluster EEPROM dump — SKC at known offset
