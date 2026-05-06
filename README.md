@@ -206,7 +206,8 @@ VAG-CP-Docs/
 │   ├── odis-versions-lear-temic-chip-map.md     ← ODIS versions and gateway hardware
 │   ├── cp-master-module.md                      ← J533 as CP master — how enforcement works
 │   ├── cp-offline-resolution.md                 ← Offline resolution decision tree and research plan
-│   └── gateway-firmware-analysis.md             ← Lear D4 gateway firmware RE — AES tables, CP handler map
+│   ├── gateway-firmware-analysis.md             ← Lear D4 gateway firmware RE — AES tables, CP handler map
+│   └── live-test-results-20260506.md            ← Live vehicle test — SA2 seed obtained, write path confirmed
 ├── cases/                     ← Documented consumer impact stories
 │   └── 2025-audi-a6-c7-hvac-seats.md
 ├── advocacy/                  ← How to take action
