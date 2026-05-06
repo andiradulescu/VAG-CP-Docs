@@ -165,3 +165,34 @@ The vehicle's SKC (5-digit code) is needed to compute the diagnostic SA2 key. So
 2. VCDS Login — common codes: 12233, 11463, 00000, 20103
 3. Audi dealer — with VIN + proof of ownership
 4. Instrument cluster EEPROM dump — SKC at known offset
+
+## Late Session — CP Master Switch Discovery
+
+### VCDS MAS00049 — Component Protection Output Test
+Located in: **Address 19 (CAN Gateway) → Output Tests → MAS00049-Component protection**
+
+When activated with "Start parameter: On":
+- ALL modules in the car immediately enter CP active state
+- MMI displays "features disabled"
+- Turning it OFF + reboot → all enrolled modules recover (CP cleared)
+- This proves J533 has a **master CP broadcast mechanism**
+
+### Routine 0x0049 on J533
+- **Exists**: NRC 0x13 (wrongLength) confirms the routine is registered
+- **Format**: Takes exactly **3 bytes of data** (same as routine 0x0226)
+- **Previously executed**: RequestResults `71 03 00 49` = positive
+- All tested 3-byte values return NRC 0x31 (outOfRange) — correct encoding unknown
+- May require SA2/login on J533 before accepting parameters
+
+### Showroom Mode (DID 0x043E) Writable
+- Write 0xFF → positive response `6E 04 3E` (write accepted)
+- Write 0x00 → no response (J533 hangs — may involve sub-bus notification)
+- Currently set to 0xFF
+
+### Implication
+Two CP enforcement layers exist:
+1. **J533 master broadcast** (routine 0x0049) — affects all modules simultaneously
+2. **Module-level IKA verification** — individual challenge-response per module
+
+The master switch may be able to override module-level CP without IKA blobs.
+Finding the correct routine 0x0049 parameters could bypass the entire IKA/SA2 chain.
