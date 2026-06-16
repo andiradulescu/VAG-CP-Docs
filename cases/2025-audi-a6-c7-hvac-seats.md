@@ -110,3 +110,47 @@ The following DID addresses are confirmed for this vehicle's platform (C7 A6, EV
 
 **Resolution path:** GEKO server offline as of March 2026. Active research into offline IKA key write via UDS `WriteDataByIdentifier(0x00BE)` — see `cp-system-explained.md` for current status. Confirmed IKA key blob from Feb 2024 session available; hardware test pending to confirm VIN-bound vs module-bound derivation. to J255 DID `0x00BE`. Third-party option: vw-geko.com (~€30–40 per module). Dealer option: $300–500+ per module. No offline solution exists that does not involve hardware-level MCU reprogramming of J533 (CarProTool, V850 programmer).
 
+---
+
+### Technical Investigation Update (June 2026) — Gateway CP fully reverse-engineered
+
+The J533 gateway's CP firmware (Renesas V850) was reverse-engineered and the model
+confirmed live on the vehicle. Full technical detail: [`../technical/j533-cp-verification-cipher.md`](../technical/j533-cp-verification-cipher.md).
+
+**Key findings:**
+
+1. **CP is two layers.** The gateway *enrollment* layer (the install-list that produces the
+   "CP active" gateway state) is verified by **standard AES-128 against a fixed, public
+   firmware constant** — no per-vehicle key, no security value. The *per-module credential*
+   layer (the 34-byte IKA key) is the only real cryptographic binding, and it remains
+   GEKO-server-derived.
+
+2. **The enrollment layer is forgeable with zero key recovery** — the "valid" record is
+   computable from values printed in the firmware. This is the layer commercial CP tools
+   manipulate. It confirms, technically, that this layer provides no anti-theft benefit.
+
+3. **The write channel is wide open.** `WriteDataByIdentifier` to the CP DIDs (`0x00BE`,
+   `0x04A3`) is accepted with **no SecurityAccess** in the extended diagnostic session,
+   confirmed live. The only thing the owner cannot produce offline is the GEKO-derived IKA
+   blob for the current module.
+
+4. **The HVAC module reads "enrolled/valid" at the gateway while still limping** — proving
+   the module enforces CP *locally*, independent of the gateway. Writing a (stale) IKA blob
+   was accepted but inert (no re-pair, no auth-fail increment).
+
+**Practical status for this vehicle:**
+
+- **HVAC / Climatronic:** a per-module firmware patch of the module's own CP/limp gate was
+  derived and verified offline (no GEKO, no dealer). Restores full climate function via a
+  bench MCU write. This is the working DIY route.
+- **Seat module(s):** same situation — no OBD-side re-pair is possible without the
+  GEKO-derived credential; the realistic DIY fix is the same per-module firmware patch on the
+  bench.
+
+**Bottom line for advocacy:** an owner with perfect, identical, self-owned donor parts cannot
+restore them over the diagnostic port — not because the security is strong (the enrollment
+crypto is a fixed key over a public constant), but because the one credential that matters is
+gated behind a server VW has withdrawn from independent access. The remaining path is
+silicon-level firmware modification of each module: a disproportionate, high-skill
+intervention to undo a lock with no security purpose.
+
