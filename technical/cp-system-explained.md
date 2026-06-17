@@ -187,3 +187,50 @@ If all blobs are identical, the fix is fully determined and offline.
 
 *Source: ODIS session log `NO_ORDER_WAUGGA**********8_2024-02-27_22-59-28_dprot.htm`,
 Renesas SH7254R datasheet, VAG-CP-Docs research.*
+
+---
+
+## Update (June 2026): the credential layer is a *local symmetric check*, not server crypto
+
+Reverse-engineering the firmware of several Component-Protection modules on this platform
+(the HVAC/Climatronic, a seat-memory module, and the body-control module) shows the per-module
+CP credential ("IKA") is verified by a **local symmetric-AES known-answer test**, identical in
+shape across the modules examined:
+
+> the module takes a **challenge**, computes **AES(challenge, key)**, and compares the result
+> byte-for-byte against a **stored per-vehicle value** held in its own data-flash. Pass → normal
+> operation; mismatch → the component-protection fault and the degraded "limp" behaviour.
+
+Three things follow, and they sharpen the right-to-repair argument:
+
+1. **There is no asymmetric crypto and no server in the verification.** No RSA, no signature, no
+   online challenge-response to VW's servers is involved in the *check itself*. The AES key lives
+   on the module; the per-vehicle "answer" lives in the module's own re-writable data-flash. This
+   is a symmetric known-answer test — it carries no cryptographic anti-theft strength of the kind a
+   real immobilizer has. (The earlier "the blob is GEKO-signed and a forged blob is inert" framing
+   is refined: a *wrong* stored value is inert because it does not match the computed answer — but
+   a *correct* one, for the vehicle's own challenge, passes. The barrier is not signature strength.)
+
+2. **The write path is open.** On at least one module the credential is written through the
+   module's own standard diagnostic write path with **no SecurityAccess and in the default session**,
+   and is stored unconditionally. So *installing* a credential is not the obstacle.
+
+3. **The only real barrier is the per-vehicle challenge derivation** — i.e. *what value the module
+   is asked to match* — which is tied to the immobilizer secret the vehicle's **own key** carries.
+   An owner with their own key/immobilizer access has, in principle, every input the module needs;
+   the missing piece is the derivation step that the dealer tool performs and that is withheld from
+   independent access. This is a withheld *procedure*, not a strong cryptographic lock.
+
+### What this answers from the open-questions list above
+
+| Question | Updated answer |
+|---|---|
+| Can the fix be done without GEKO? | **Structurally yes** — the verification is local and symmetric, with no server in the loop. What remains is recovering the per-vehicle challenge derivation (owner-key-anchored), confirmable by capturing one live pairing handshake on the bus. |
+| Is the IKA per-vehicle or per-module? | **Both layers exist**: the stored "answer" is **per-vehicle** (in the module's data-flash); the AES key(s) are **per-module/per-software** (fixed in firmware). |
+| Does transponder/key data go into key derivation? | This is now the single decisive open question — whether the verify *challenge* is derived from the owner-accessible immobilizer secret (the key transponder) or an externally-issued nonce. A live bus capture of one component-protection handshake settles it. |
+
+**Advocacy takeaway:** Component Protection on this platform is enforced by a **local symmetric
+known-answer test**, not by server-bound cryptography. It provides no meaningful anti-theft benefit
+that a legitimate owner — who already holds the vehicle's key and immobilizer secret — could not
+satisfy. The obstacle to self-repair is a deliberately withheld pairing *procedure*, not a
+cryptographic barrier. *(Mechanism only; exact constants/keys are intentionally omitted here.)*
