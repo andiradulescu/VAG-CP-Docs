@@ -154,3 +154,31 @@ gated behind a server VW has withdrawn from independent access. The remaining pa
 silicon-level firmware modification of each module: a disproportionate, high-skill
 intervention to undo a lock with no security purpose.
 
+---
+
+### Technical Investigation Update (June 2026) — DIY unlock path characterised
+
+Continued reverse-engineering refined *how* the owner's only offline option actually works, and
+reinforced how disproportionate it is. Two process findings (mechanism only — no key material):
+
+1. **The sole DIY route is a per-module firmware patch, and it is software-version portable.**
+   The module's CP limp (climate restricted to defrost-only) is lifted by neutralising a small
+   guard in the module's *own* authentication state machine, after which the firmware runs its
+   own "authenticated" grant unconditionally. That location is identifiable by a stable code
+   signature across the **entire 2-zone software history** examined (~a decade of revisions), so
+   the fix is not tied to one software level — an owner on any 2-zone build can apply it. No
+   server, no dealer, and no per-vehicle secret is involved.
+
+2. **It unavoidably requires opening the module and reading its microcontroller on a bench.**
+   The low-level code the patch concerns — and the module's boot block in general — is **never
+   distributed in any flash-update package.** Confirmed across **24 official software packages**
+   spanning the part's full history: every one ships only the application region plus a small
+   auxiliary block, never the factory boot block. The work therefore cannot be done over the
+   diagnostic (OBD) port; it requires physical bench access to the chip.
+
+**Advocacy takeaway:** the only path left to a legitimate owner holding identical, self-owned
+donor parts is a **silicon-level firmware modification on a bench** — a high-skill,
+hardware-level intervention to undo an anti-repair lock that (per the gateway analysis) carries
+no anti-theft benefit. The barrier is not security; it is the deliberate withholding of the one
+server-issued credential, which forces owners into a disproportionate workaround.
+
